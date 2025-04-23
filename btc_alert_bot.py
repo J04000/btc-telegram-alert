@@ -5,24 +5,27 @@ from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from threading import Thread
 
-# Telegram
 TOKEN = "7757204285:AAH1cKohAVRBcIHEEV7h7bCLnefn5hNyk44"
 CHAT_ID = "7743912374"
 bot = Bot(token=TOKEN)
 
-# Configurações
-CHECK_INTERVAL = 180  # segundos
-THRESHOLD = 1200  # alerta a cada variação de $1200
+CHECK_INTERVAL = 180  # 3 minutos
+THRESHOLD = 1200
 
-# Log
 logging.basicConfig(level=logging.INFO)
 
-# Funções de análise
 def get_btc_price():
     url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
     response = requests.get(url)
-    data = response.json()
-    return data["bitcoin"]["usd"]
+    try:
+        data = response.json()
+        price = data.get("bitcoin", {}).get("usd")
+        if price is None:
+            raise ValueError("Preço do Bitcoin não encontrado.")
+        return price
+    except Exception as e:
+        print("Erro ao obter o preço do BTC:", e)
+        raise
 
 def get_price_history():
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1&interval=hourly"
@@ -43,13 +46,11 @@ def analyze_trend():
     else:
         return f"Sem tendência clara — Preço atual: ${current_price:.2f}"
 
-# Comando do Telegram
 async def analise_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info("Comando /analise recebido")
     trend = analyze_trend()
     await update.message.reply_text(trend)
 
-# Monitoramento automático
 def monitor():
     try:
         last_price = get_btc_price()
@@ -73,7 +74,6 @@ def monitor():
             logging.error(f"Erro no loop: {e}")
             bot.send_message(chat_id=CHAT_ID, text="Erro ao verificar o preço do BTC.")
 
-# Inicialização
 if __name__ == "__main__":
     Thread(target=monitor).start()
     app = ApplicationBuilder().token(TOKEN).build()
