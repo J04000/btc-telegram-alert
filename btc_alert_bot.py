@@ -15,12 +15,34 @@ def get_btc_price():
     data = response.json()
     return data["bitcoin"]["usd"]
 
+def get_price_history():
+    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1&interval=hourly"
+    response = requests.get(url)
+    data = response.json()
+    prices = [p[1] for p in data["prices"]]
+    return prices
+
+def analyze_trend():
+    prices = get_price_history()
+    if len(prices) < 5:
+        return "Dados insuficientes para análise de tendência."
+
+    current_price = prices[-1]
+    moving_average = sum(prices[-5:]) / 5
+
+    if current_price > moving_average:
+        return "Tendência de ALTA (acima da média de 5h)"
+    elif current_price < moving_average:
+        return "Tendência de BAIXA (abaixo da média de 5h)"
+    else:
+        return "Sem tendência clara."
+
 def send_alert(message):
     bot.send_message(chat_id=CHAT_ID, text=message)
 
 def main():
     last_price = get_btc_price()
-    send_alert(f"Monitoramento iniciado. Preço atual do BTC: ${last_price}")
+    send_alert(f"Monitoramento iniciado. Preço atual do BTC: ${last_price:.2f}")
 
     while True:
         time.sleep(CHECK_INTERVAL)
@@ -30,7 +52,8 @@ def main():
 
             if diff >= THRESHOLD:
                 direction = "subiu" if current_price > last_price else "caiu"
-                send_alert(f"O Bitcoin {direction} ${diff:.2f} e está em ${current_price:.2f}")
+                trend = analyze_trend()
+                send_alert(f"O Bitcoin {direction} ${diff:.2f} e está em ${current_price:.2f}\n{trend}")
                 last_price = current_price
         except Exception as e:
             send_alert("Erro ao verificar o preço do Bitcoin.")
