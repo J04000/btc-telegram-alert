@@ -5,7 +5,7 @@ from telegram import Bot
 
 # Configurações do bot
 TOKEN = "7757204285:AAH1cKohAVRBcIHEEV7h7bCLnefn5hNyk44"
-CHAT_ID = "COLOQUE_SEU_CHAT_ID_AQUI"  # Você precisa substituir isso pelo seu ID real
+CHAT_ID = "7743912374"  # Você precisa substituir isso pelo seu ID real
 INTERVAL = 180  # 3 minutos
 THRESHOLD = 1200  # 1200 USDT
 
