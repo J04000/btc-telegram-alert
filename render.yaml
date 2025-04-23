@@ -1,0 +1,7 @@
+services:
+  - type: worker
+    name: btc-alert-bot
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: "python btc_alert_bot.py"
