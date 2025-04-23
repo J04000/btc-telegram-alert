@@ -1,39 +1,39 @@
 import requests
 import time
-import logging
-from telegram import Bot
+import telegram
 
-# Configurações do bot
 TOKEN = "7757204285:AAH1cKohAVRBcIHEEV7h7bCLnefn5hNyk44"
-CHAT_ID = "7743912374"  # Você precisa substituir isso pelo seu ID real
-INTERVAL = 180  # 3 minutos
-THRESHOLD = 1200  # 1200 USDT
+CHAT_ID = "7743912374"
+CHECK_INTERVAL = 180  # 3 minutos em segundos
+THRESHOLD = 1200  # Alerta a cada variação de $1200
 
-bot = Bot(token=TOKEN)
-last_price = None
+bot = telegram.Bot(token=TOKEN)
 
 def get_btc_price():
-    url = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
     response = requests.get(url)
-    return float(response.json()["price"])
+    data = response.json()
+    return data["bitcoin"]["usd"]
 
-def send_alert(current_price, diff):
-    direction = "subiu" if diff > 0 else "caiu"
-    bot.send_message(chat_id=CHAT_ID, text=f"O Bitcoin {direction} ${abs(diff):.2f} e está valendo agora ${current_price:.2f}")
+def send_alert(message):
+    bot.send_message(chat_id=CHAT_ID, text=message)
 
 def main():
-    global last_price
+    last_price = get_btc_price()
+    send_alert(f"Monitoramento iniciado. Preço atual do BTC: ${last_price}")
+
     while True:
+        time.sleep(CHECK_INTERVAL)
         try:
-            price = get_btc_price()
-            if last_price is None:
-                last_price = price
-            elif abs(price - last_price) >= THRESHOLD:
-                send_alert(price, price - last_price)
-                last_price = price
+            current_price = get_btc_price()
+            diff = abs(current_price - last_price)
+
+            if diff >= THRESHOLD:
+                direction = "subiu" if current_price > last_price else "caiu"
+                send_alert(f"O Bitcoin {direction} ${diff:.2f} e está em ${current_price:.2f}")
+                last_price = current_price
         except Exception as e:
-            logging.error(f"Erro: {e}")
-        time.sleep(INTERVAL)
+            send_alert("Erro ao verificar o preço do Bitcoin.")
 
 if __name__ == "__main__":
     main()
