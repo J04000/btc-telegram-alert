@@ -3,9 +3,9 @@ import requests
 from telegram import Bot
 
 TOKEN = "7757204285:AAH1cKohAVRBcIHEEV7h7bCLnefn5hNyk44"
-CHAT_ID = "7743912374"
+CHAT_ID = "7743912374" 
 CHECK_INTERVAL = 300  # 5 minutos
-THRESHOLD = 1200  # USDT de diferença para gerar alerta
+THRESHOLD = 1200
 
 bot = Bot(token=TOKEN)
 
@@ -15,20 +15,15 @@ def get_btc_price():
     if response.status_code != 200:
         raise Exception(f"Erro na API: {response.status_code} - {response.text}")
     data = response.json()
-    if "bitcoin" not in data or "usd" not in data["bitcoin"]:
-        raise Exception(f"Resposta inesperada da API: {data}")
     return data["bitcoin"]["usd"]
 
 def get_price_history():
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1&interval=hourly"
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception(f"Erro na API de histórico: {response.status_code} - {response.text}")
+        raise Exception(f"Erro na API: {response.status_code} - {response.text}")
     data = response.json()
-    if "prices" not in data or not data["prices"]:
-        raise Exception(f"Resposta inesperada da API de histórico: {data}")
-    prices = [p[1] for p in data["prices"]]
-    return prices
+    return [p[1] for p in data["prices"]]
 
 def analyze_trend():
     prices = get_price_history()
@@ -37,9 +32,9 @@ def analyze_trend():
     media = sum(prices[-5:]) / 5
     atual = prices[-1]
     if atual > media:
-        return "Tendência de ALTA"
+        return "Tendência de ALTA - possível momento de compra."
     elif atual < media:
-        return "Tendência de BAIXA"
+        return "Tendência de BAIXA - possível recuada no preço."
     return "Sem tendência clara."
 
 async def send_alert(text):
@@ -47,8 +42,7 @@ async def send_alert(text):
 
 async def monitor():
     last_price = get_btc_price()
-    trend = analyze_trend()
-    await send_alert(f"Monitoramento iniciado: ${last_price:.2f}\n{trend}")
+    await send_alert(f"Monitoramento iniciado: ${last_price:.2f}")
     while True:
         await asyncio.sleep(CHECK_INTERVAL)
         try:
