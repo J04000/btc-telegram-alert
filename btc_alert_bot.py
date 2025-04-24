@@ -3,7 +3,7 @@ import requests
 from telegram import Bot
 
 TOKEN = "7757204285:AAH1cKohAVRBcIHEEV7h7bCLnefn5hNyk44"
-CHAT_ID = "7743912374" 
+CHAT_ID = "7743912374"
 CHECK_INTERVAL = 300  # 5 minutos
 THRESHOLD = 1200
 
@@ -42,15 +42,17 @@ async def send_alert(text):
 
 async def monitor():
     last_price = get_btc_price()
-    await send_alert(f"Monitoramento iniciado: ${last_price:.2f}")
+    trend = analyze_trend()  # Obter a tendência inicial
+    await send_alert(f"Monitoramento iniciado: ${last_price:.2f}\n{trend}")
+    
     while True:
         await asyncio.sleep(CHECK_INTERVAL)
         try:
             current_price = get_btc_price()
+            trend = analyze_trend()  # Atualizar a tendência antes de enviar a alerta
             diff = current_price - last_price
             if abs(diff) >= THRESHOLD:
                 direction = "subiu" if diff > 0 else "caiu"
-                trend = analyze_trend()
                 await send_alert(
                     f"O Bitcoin {direction} ${abs(diff):.2f} e está em ${current_price:.2f}\n{trend}"
                 )
